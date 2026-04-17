@@ -66,12 +66,16 @@
             background-color: white;
             color: var(--primary-color);
             border-radius: 6px;
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease, color 0.2s ease;
             word-break: break-all;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
         }
-        button:hover {
-            background-color: var(--primary-color);
-            color: white;
+        @media (hover: hover) {
+            button:hover {
+                background-color: var(--primary-color);
+                color: white;
+            }
         }
         button:disabled {
             cursor: not-allowed;
