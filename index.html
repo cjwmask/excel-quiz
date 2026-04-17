@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel 快捷鍵挑戰賽</title>
+    <style>
+        :root {
+            --primary-color: #217346;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --error-color: #d83b01;
+            --success-color: #107c41;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            margin: 20px;
+        }
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .question {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 30px;
+            min-height: 80px;
+            line-height: 1.4;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: 2px solid var(--primary-color);
+            background-color: white;
+            color: var(--primary-color);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            word-break: break-all;
+        }
+        button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback {
+            font-size: 1.2em;
+            font-weight: bold;
+            height: 30px;
+            margin-bottom: 20px;
+        }
+        .correct { color: var(--success-color); }
+        .wrong { color: var(--error-color); }
+        .btn-start {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.2em;
+            padding: 15px 30px;
+            border: none;
+        }
+        .btn-start:hover {
+            background-color: #195936;
+        }
+        #quiz-screen, #result-screen {
+            display: none;
+        }
+        .result-details {
+            text-align: left;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+        .formula {
+            background: #e9f5ee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="start-screen">
+    <h1>Excel 快捷鍵挑戰賽</h1>
+    <p>測驗規則：</p>
+    <ul style="text-align: left; line-height: 1.6;">
+        <li>系統將從完整題庫中隨機抽取 <strong>50 題</strong>，限時 5 分鐘 (300秒)。</li>
+        <li><strong>計分方式：</strong> 您的「完賽總秒數」將是您實際作答花費的時間，加上懲罰秒數。</li>
+        <li><strong>懲罰機制：</strong> 每答錯一題，或超時未答的題目，皆會自動增加 10 秒懲罰。總秒數越低，成績越好！</li>
+    </ul>
+    <button class="btn-start" onclick="startGame()">開始測驗</button>
+</div>
+
+<div class="container" id="quiz-screen">
+    <div class="info-bar">
+        <span id="question-count">題數: 1 / 50</span>
+        <span id="timer">時間: 05:00</span>
+    </div>
+    <div class="question" id="question-text">題目載入中...</div>
+    <div class="options" id="options-container"></div>
+    <div class="feedback" id="feedback-text"></div>
+</div>
+
+<div class="container" id="result-screen">
+    <h1>測驗結束！</h1>
+    <div class="result-details" id="result-details"></div>
+    <button class="btn-start" onclick="location.reload()">重新測驗</button>
+</div>
+
+<script>
+    // 這裡放入您提供的完整題庫資料
+    const rawData = `
+1.0,Ctrl+W,關閉活頁簿
+2.0,Ctrl+O,開啟活頁簿
+3.0,Ctrl+S,儲存活頁簿
+4.0,Ctrl+C,複製（複製選取的儲存格）
+5.0,Ctrl+V ,貼上（在插入點貼上內容，取代任何選取項目）
+6.0,Ctrl+Z,復原（復原上一個動作）
+7.0,Ctrl+X,剪下（移動選取的儲存格）
+8.0,Ctrl+B,粗體
+9.0,Ctrl+9,隱藏選取的列
+10.0,Ctrl+0,隱藏選取的欄
+11.0,Ctrl+F1,展開或摺疊功能區
+12.0,Ctrl+方向鍵,移到工作表中目前資料區域的邊緣
+13.0,Ctrl+End,移至工作表上的最後一個儲存格，即所用之最右邊一欄、最下一列的儲存格。
+14.0,Ctrl+Shift+End,將儲存格選取範圍延伸至工作表中使用的最後一個儲存格 (右下角)
+15.0,Ctrl+Home,移至工作表的開頭
+16.0,Ctrl+Page Down,移至活頁簿中的下一個工作表
+17.0,Ctrl+Page Up,移至活頁簿中的上一個工作表
+18.0,Ctrl+1,"開啟 [儲存格格式] 對話方塊"
+19.0,Ctrl+Shift+F/P,"在 [儲存格格式] 對話方塊中設定字型格式"
+20.0,Ctrl+Shift+加號 (+),"開啟 [插入] 對話方塊以插入空白儲存格"
+21.0,Ctrl+減號 (-),"開啟 [刪除] 對話方塊以刪除選取的儲存格"
+22.0,Ctrl+Shift+冒號 (:),輸入目前的時間
+23.0,Ctrl+分號 (;),輸入目前的日期
+24.0,Ctrl+抑音符號 (\`), 在工作表中切換顯示儲存格值或公式
+25.0,Ctrl+單引號 ('),將公式從作用儲存格上方的儲存格複製到儲存格或資料編輯列中
+26.0,Ctrl+Alt+V  ,"開啟 [選擇性貼上] 對話方塊"
+27.0,Ctrl+I / 3,使文字變成斜體或移除斜體格式
+28.0,Ctrl+B / 2,使文字變成粗體或移除粗體格式
+29.0,Ctrl+U / 4,將文字加上底線或移除底線
+30.0,Ctrl+5,套用或移除刪除線格式
+31.0,Ctrl+6,切換隱藏物件、顯示物件和顯示物件預留位置
+32.0,Ctrl+Shift+& 符號 ,套用外框至選取的儲存格
+33.0,Ctrl+Shift+底線 (_), 移除所選儲存格的外框
+34.0,Ctrl+8,顯示或隱藏大綱符號
+35.0,Ctrl+D,"使用 [向下填滿] 命令將選定範圍中最上面儲存格的內容和格式，複製到下面的儲存格中"
+36.0,Ctrl+Shift+波狀符號 (~) ,套用通用數字格式
+37.0,Ctrl+Shift+貨幣符號 ($),套用有兩位小數的貨幣格式 (負數以括號表示)
+38.0,Ctrl+Shift+百分比 (%),套用沒有小數位數的百分比格式
+39.0,Ctrl+Shift+插入號 (^),套用有兩位小數的科學符號數字格式
+40.0,Ctrl+Shift+數字符號 (#),套用有年、月和日的日期格式
+41.0,Ctrl+Shift+@ 記號,套用有小時和分鐘以及 AM 或 PM 的時間格式
+42.0,Ctrl+Shift+驚嘆號 (!),套用有兩位小數、千分位分隔符號以及負數以減號 (-) 表示的數值格式
+43.0,Ctrl+K,"開啟 [插入超連結] 對話方塊。"
+44.0,Ctrl+Q,"針對含有資料的所選儲存格顯示 [快速分析] 選項。"
+45.0,Ctrl+L / T,"顯示 [建立表格] 對話方塊"
+46.0,Ctrl+A / Ctrl+Shift+空格鍵,選取整份工作表
+47.0,Ctrl+Shift+Page Down,選取活頁簿中目前的工作表和下一個工作表
+48.0,Ctrl+Shift+Page Up,選取活頁簿中的目前工作表和上一個工作表
+49.0,Ctrl+Shift+方向鍵,將儲存格的選取範圍延伸至和作用儲存格相同的欄或列中的上一個非空白儲存格
+50.0,Ctrl+Enter,以目前項目填滿選定的儲存格範圍
+51.0,Ctrl+空格鍵,選取工作表中的一整欄
+52.0,Ctrl+Shift+空格鍵,如果選取一個物件，就會選取工作表上的所有物件
+53.0,Ctrl+Shift+Home,將儲存格選取範圍延伸至工作表的開頭
+54.0,Ctrl+A / Ctrl+Shift+空格鍵 ,如果工作表含有資料，就會選取目前的範圍。
+55.0,Ctrl+Shift+星號 (*),選取作用中儲存格的目前範圍，或選取整份樞紐分析表
+56.0,Ctrl+Y,可行的話，重複上一個命令或動作
+58.0,Ctrl+Shift+U,展開或摺疊資料編輯列
+59.0,Ctrl+End,在資料編輯列中時，將游標移到文字的結尾
+60.0,Ctrl+Shift+End,選取資料編輯列中從游標位置開始到結尾的所有文字
+61.0,Ctrl+Alt+F9,計算所有已開啟活頁簿中全部的工作表，無論自上次計算起是否有所變更
+62.0,Ctrl+Alt+Shift+F9,重新檢查從屬公式，然後計算所有已開啟活頁簿中全部的儲存格
+63.0,Ctrl+A,"當插入點位於公式中函數名稱的右邊時，會顯示 [函數引數] 對話方塊"
+64.0,Ctrl+Shift+A,當插入點位於公式中函數名稱的右邊時，插入引數名稱及括號
+65.0,Ctrl+E,叫用快速填入，以自動辨識相鄰的欄中的模式，並填入目前的欄
+66.0,Ctrl+Shift+一般引號 (""),將值從作用中儲存格上方的儲存格複製到作用中儲存格或資料編輯列中
+67.0,Alt+H,"移至 [常用] 索引標籤"
+68.0,Alt+H，H,選擇填滿色彩
+69.0,Alt+N,"移至 [插入] 索引標籤"
+70.0,Alt+H，A，然後按 C,置中對齊儲存格的內容
+71.0,Alt+P,"移至 [版面配置] 索引標籤"
+72.0,Alt+A,"移至 [資料] 索引標籤"
+73.0,Alt+W,"移至 [檢視] 索引標籤"
+74.0,Alt+H，B,新增框線
+75.0,Alt+H，D，然後按 C,刪除欄
+76.0,Alt+M,"移至 [公式] 索引標籤"
+77.0,Alt,選取功能區的使用中索引標籤，並啟用便捷鍵
+78.0,Alt+Q，輸入搜尋字詞,"開啟功能區上的 [操作說明搜尋] 方塊並輸入搜尋字詞"
+79.0,Alt+F," 開啟 [檔案] 頁面並使用 Backstage 檢視"
+80.0,Alt+H,"開啟 [常用] 索引標籤並設定文字與數值格式，以及使用 [尋找] 工具"
+81.0,Alt+N,"開啟 [插入] 索引標籤並插入樞紐分析表、圖表、增益集、走勢圖、圖片、圖案、頁首或文字方塊"
+82.0,Alt+P,"開啟 [頁面配置] 索引標籤並使用佈景主題、版面設定、調整大小和排列等功能"
+83.0,Alt+M,"開啟 [公式] 索引標籤並插入、追蹤及自訂函數與計算"
+84.0,Alt+A,"開啟 [資料] 索引標籤並連結、排序、篩選、分析及處理資料"
+85.0,Alt+R,"開啟 [校閱] 索引標籤並進行拼字檢查、新增註解，以及保護工作表和活頁簿"
+86.0,Alt+W,"開啟 [檢視] 索引標籤並預覽分頁線和版面配置、顯示及隱藏格線和標題"
+87.0,Alt+Page Down,在工作表中往右移動一個畫面
+88.0,Alt+Page Up,在工作表中往左移動一個畫面
+89.0,Alt+Enter,在同一個儲存格中開始新的一行
+90.0,Alt+Shift+F10,"顯示 [錯誤檢查] 按鈕的功能表或訊息"
+91.0,Alt+F1,建立目前資料範圍的內嵌圖表
+92.0,Alt+M，M，D,定義參照中要使用的名稱
+93.0,Alt+F8,建立、執行、編輯或刪除巨集
+94.0,Alt+F11,開啟 Microsoft Visual Basic For Applications 編輯器
+95.0,Shift+F10,開啟操作功能表
+96.0,Shift+Tab,移至工作表中的上一個儲存格，或是對話方塊中的上一個選項
+97.0,Shift+F2,新增或編輯儲存格註解
+98.0,Shift+方向鍵,逐格延伸儲存格的選取範圍
+99.0,Shift+F8,使用方向鍵在儲存格選取範圍中加入不相鄰的儲存格或範圍
+100.0,Shift+Enter,完成儲存格項目並選取上方儲存格
+101.0,Shift+空格鍵,選取工作表中的一整列
+102.0,Shift+F9,計算使用中工作表
+103.0,Shift+F3,插入函數
+104.0,F1,"顯示 [Excel 說明] 工作窗格"
+105.0,Ctrl+F1,顯示或隱藏功能區
+106.0,Alt+F1,根據目前範圍內的資料建立內嵌圖表
+107.0,F2,"編輯使用中的儲存格並將插入點放在其內容的結尾。"
+109.0,Ctrl+F2,"在 Backstage 檢視 中的 [列印] 索引標籤上顯示預覽列印區域"
+110.0,F3,"顯示 [貼上名稱] 對話方塊。"
+111.0,Shift+F3,"顯示 [插入函數] 對話方塊"
+112.0,F4,當公式中已選取儲存格參照或範圍時，F4 會循環搜尋絕對及相對參照的每一種組合
+113.0,Ctrl+F4,關閉選定的活頁簿視窗
+114.0,Alt+F4,關閉 Excel
+115.0,F5,"顯示 [到] 對話方塊"
+116.0,Ctrl+F5,還原所選活頁簿視窗的視窗大小
+117.0,F6,"在工作表、功能區、工作窗格和 [縮放] 控制項之間切換。"
+118.0,Shift+F6,"在工作表、[縮放] 控制項、工作窗格和功能區之間切換"
+119.0,Ctrl+F6,如果開啟一個以上的活頁簿視窗，會切換至下一個活頁簿視窗
+120.0,F7,"開啟 [拼字檢查] 對話方塊以檢查使用中的工作表或選定範圍中的拼字"
+121.0,Ctrl+F7,"如果活頁簿視窗沒有最大化，則會執行活頁簿視窗上的 [移動] 命令。"
+122.0,F8,"開啟或關閉延伸模式。"
+123.0,Shift+F8,可讓您使用方向鍵，在儲存格選取範圍中加入不相鄰的儲存格或範圍
+124.0,Ctrl+F8,如果活頁簿未放到最大，會執行調整大小命令
+125.0,Alt+F8,"顯示 [巨集] 對話方塊，以建立、執行、編輯或刪除巨集"
+126.0,F9,計算所有已開啟的活頁簿中的所有工作表
+127.0,Shift+F9,計算使用中的工作表
+128.0,Ctrl+Alt+F9,無論自上次計算起是否有所變更，都會計算所有已開啟活頁簿中全部的工作表
+129.0,Ctrl+Alt+Shift+F9,重新檢查從屬公式，然後計算所有已開啟活頁簿中全部的儲存格
+130.0,Ctrl+F9,將活頁簿視窗最小化為圖示
+131.0,F10,開啟或關閉 KeyTip (與按 Alt 的效果相同)
+132.0,Shift+F10,會顯示所選項目的捷徑功能表
+133.0,Alt+Shift+F10,"顯示 [錯誤檢查] 按鈕的功能表或訊息"
+134.0,Ctrl+F10,最大化或還原選定的活頁簿視窗
+135.0,F11,"在個別 [圖表] 工作表中建立目前資料範圍的圖表"
+136.0,Shift+F11,插入新的工作表
+137.0,Alt+F11,開啟 Microsoft Visual Basic For Applications 編輯器
+138.0,F12,"顯示 [另存新檔] 對話方塊"
+139.0,Delete,移除儲存格的內容
+140.0,Tab,將焦點移至功能區上的命令。
+141.0,方向鍵,分別向下、向上、向左或向右移到功能區的各個項目。
+142.0,Enter / Space,啟用選取的按鈕
+143.0,向左鍵,在已開啟或選取主功能表時移至子功能表
+144.0,End，方向鍵,"進入 [結束] 模式，移至作用儲存格同欄或同列中的下一個非空白儲存格"
+145.0,Home+Scroll Lock,當開啟 Scroll Lock 時，移至視窗左上角的儲存格
+146.0,Page Down,在工作表中往下移動一個畫面
+147.0,Page Up,在工作表中往上移動一個畫面
+148.0,Ctrl+Alt+5,然後重複按 Tab 鍵 循環瀏覽浮動圖案
+149.0,Esc,結束浮動圖案瀏覽並回到一般瀏覽
+150.0,Home,如有顯示功能表或子功能表，會選取功能表上的第一個命令
+151.0,Esc,取消儲存格或資料編輯列中的項目
+152.0,Enter,完成資料編輯列中的項目並選取下方儲存格
+153.0,Enter,移至資料表單下一筆記錄中的第一個欄位
+154.0,Alt,顯示功能區上的 KeyTip (新版快速鍵)
+155.0,Ctrl+方向鍵,移到工作表中目前資料區域的邊緣
+156.0,Shift+方向鍵,逐格延伸儲存格的選取範圍
+157.0,Ctrl+Shift+方向鍵,將儲存格的選取範圍，延伸至和作用儲存格相同的欄或列中的上一個非空白儲存格
+158.0,backspace,在資料編輯列中往左邊刪除一個字元。
+159.0,End,"開啟或關閉 [結束] 模式。"
+160.0,End+方向鍵,如果儲存格都是空白，即可移至該列或該欄的最後一個儲存格
+161.0,Ctrl+End,移至工作表上的最後一個儲存格，也就是使用中的最下列與最右欄。
+162.0,Ctrl+Shift+End,將儲存格選取範圍延伸至工作表上所使用的最後一個儲存格 (右下角)。
+163.0,Enter,從儲存格或資料編輯列完成儲存格項目，然後選取下面的儲存格 (依預設)
+164.0,Alt+Enter,會在同一個儲存格中換行
+165.0,Ctrl+Enter,會以目前項目填滿選定的儲存格範圍
+166.0,Shift+Enter,會完成儲存格項目，然後選取上方的儲存格
+167.0,Esc,取消儲存格或資料編輯列中的項目
+168.0,Home,移至工作表中一列的開頭。
+169.0,Ctrl+Home,會移至工作表的開頭
+170.0,Ctrl+Shift+Home,將儲存格選取範圍延伸至工作表的開頭
+171.0,Page Down,在工作表中往下移動一個畫面
+172.0,Alt+Page Down,在工作表中往右移動一個畫面
+173.0,Ctrl+Page Down,移至活頁簿中的下一個工作表
+174.0,Ctrl+Shift+Page Down,選取活頁簿中目前的工作表和下一個工作表
+175.0,Page Up,在工作表中往上移動一個畫面
+176.0,Alt+Page Up,在工作表中往左移動一個畫面
+177.0,Ctrl+Page Up,移至活頁簿中的上一個工作表
+178.0,Ctrl+Shift+Page Up,選取活頁簿中目前的工作表和上一個工作表
+179.0,Space,在對話方塊中，執行選定按鈕的動作，或是選取或取消選取核取方塊
+180.0,Ctrl+Space,選取工作表中的一整欄
+181.0,Shift+Space,選取工作表中的一整列
+182.0,Ctrl+Shift+Space,選取整份工作表。
+183.0,Alt+Space,"顯示 Excel 視窗的 [控制] 功能表"
+184.0,Tab,在工作表中往右移動一個儲存格。
+185.0,Shift+Tab,移至工作表中的上一個儲存格，或是對話方塊中的上一個選項
+186.0,Ctrl+Tab,切換至對話方塊中的下一個索引標籤
+187.0,Ctrl+Shift+Tab,切換至對話方塊中的上一個索引標籤
+`;
+
+    let questionBank = [];
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let wrongCount = 0;
+    let timeLeft = 300; 
+    let timerInterval;
+    let isAnswering = false;
+
+    // 增強版資料解析：可過濾標題、處理逗號與引號
+    function parseData() {
+        const lines = rawData.trim().split('\n');
+        let currentShortcut = "";
+        let currentFunc = "";
+
+        lines.forEach(line => {
+            let tLine = line.trim();
+            if(!tLine) return;
+
+            // 如果開頭是數字加點 (例如 1.0,)，代表是新的一題
+            if (tLine.match(/^\d+\.\d+,/)) {
+                // 先把上一題存入題庫
+                if (currentShortcut) {
+                    questionBank.push({ shortcut: currentShortcut, func: currentFunc.replace(/^"|"$/g, '') });
+                }
+                
+                let parts = tLine.split(',');
+                currentShortcut = parts[1].trim();
+                // 把功能描述中可能被逗號切斷的字串接回來
+                currentFunc = parts.slice(2).join(',').trim();
+            } 
+            // 如果開頭是 ,, 則是上一題功能的換行延伸描述 (直接合併進上一題)
+            else if (tLine.startsWith(',,')) {
+                currentFunc += " " + tLine.substring(2).trim();
+            }
+        });
+
+        // 存入最後一題
+        if (currentShortcut) {
+            questionBank.push({ shortcut: currentShortcut, func: currentFunc.replace(/^"|"$/g, '') });
+        }
+    }
+
+    function getRandomQuestions(num) {
+        let shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, Math.min(num, shuffled.length));
+    }
+
+    function generateOptions(correctShortcut) {
+        let options = [correctShortcut];
+        let shuffledBank = [...questionBank].sort(() => 0.5 - Math.random());
+        
+        for (let i = 0; i < shuffledBank.length; i++) {
+            if (options.length >= 4) break;
+            if (shuffledBank[i].shortcut !== correctShortcut && !options.includes(shuffledBank[i].shortcut)) {
+                options.push(shuffledBank[i].shortcut);
+            }
+        }
+        return options.sort(() => 0.5 - Math.random());
+    }
+
+    function startGame() {
+        if(questionBank.length === 0) {
+            parseData();
+        }
+        
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        
+        // 確保抽取 50 題
+        currentQuestions = getRandomQuestions(50);
+        currentQuestionIndex = 0;
+        wrongCount = 0;
+        timeLeft = 300; 
+        
+        startTimer();
+        loadQuestion();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `時間: ${m}:${s}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                endGame(true);
+            }
+        }, 1000);
+    }
+
+    function loadQuestion() {
+        if (currentQuestionIndex >= currentQuestions.length) {
+            endGame(false);
+            return;
+        }
+
+        isAnswering = true;
+        document.getElementById('feedback-text').innerText = "";
+        document.getElementById('question-count').innerText = `題數: ${currentQuestionIndex + 1} / ${currentQuestions.length}`;
+        
+        let q = currentQuestions[currentQuestionIndex];
+        document.getElementById('question-text').innerText = `下列哪個快速鍵的功能是：\n「${q.func}」？`;
+        
+        let options = generateOptions(q.shortcut);
+        let optionsHtml = "";
+        options.forEach(opt => {
+            optionsHtml += `<button onclick="checkAnswer(this, '${opt.replace(/'/g, "\\'")}')">${opt}</button>`;
+        });
+        document.getElementById('options-container').innerHTML = optionsHtml;
+    }
+
+    function checkAnswer(btnElement, selected) {
+        if (!isAnswering) return;
+        isAnswering = false;
+        
+        let correct = currentQuestions[currentQuestionIndex].shortcut;
+        let buttons = document.querySelectorAll('.options button');
+        
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.innerText === correct) {
+                btn.style.backgroundColor = 'var(--success-color)';
+                btn.style.color = 'white';
+            }
+        });
+
+        if (selected === correct) {
+            document.getElementById('feedback-text').innerHTML = "<span class='correct'>✔ 答對了！</span>";
+        } else {
+            wrongCount++;
+            document.getElementById('feedback-text').innerHTML = `<span class='wrong'>✖ 答錯了！正確答案是 ${correct}</span>`;
+            btnElement.style.backgroundColor = 'var(--error-color)';
+            btnElement.style.color = 'white';
+        }
+
+        currentQuestionIndex++;
+        setTimeout(loadQuestion, 1200); 
+    }
+
+    function endGame(isTimeout) {
+        clearInterval(timerInterval);
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+
+        let baseTimeUsed = 300 - Math.max(0, timeLeft);
+        let unansweredCount = currentQuestions.length - currentQuestionIndex; 
+        let wrongPenalty = wrongCount * 10;
+        let unansweredPenalty = unansweredCount * 10;
+        
+        let totalTime = baseTimeUsed + wrongPenalty + unansweredPenalty;
+
+        let resultHtml = `
+            <p>⏱️ <strong>實際作答時間：</strong> ${baseTimeUsed} 秒</p>
+            <p>🎯 <strong>實際作答題數：</strong> ${currentQuestionIndex} / 50</p>
+            <p>❌ <strong>答錯題數：</strong> ${wrongCount} 題 (加 ${wrongPenalty} 秒)</p>
+            ${isTimeout ? `<p style="color:var(--error-color);">⚠️ <strong>超時未答題數：</strong> ${unansweredCount} 題 (加 ${unansweredPenalty} 秒)</p>` : ''}
+            
+            <div class="formula">
+                <p style="margin: 0 0 10px 0; color: #666; font-size: 0.9em;">(實際作答時間 + 答錯加總 + 未答加總)</p>
+                <h2 style="color:var(--primary-color); margin: 0;">🏆 完賽總秒數： ${totalTime} 秒</h2>
+            </div>
+        `;
+        
+        document.getElementById('result-details').innerHTML = resultHtml;
+    }
+</script>
+
+</body>
+</html>
